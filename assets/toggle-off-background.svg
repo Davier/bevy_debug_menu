@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="16"
+   height="16"
+   fill="currentColor"
+   class="bi bi-toggle-off"
+   viewBox="0 0 16 16"
+   version="1.1"
+   id="svg4"
+   sodipodi:docname="toggle-off-background.svg"
+   inkscape:export-filename="/home/davierb/prog/bevy_debug_menu/assets/toggle-off.png"
+   inkscape:export-xdpi="384"
+   inkscape:export-ydpi="384"
+   inkscape:version="1.0.1 (3bc2e813f5, 2020-09-07)">
+  <metadata
+     id="metadata10">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs8" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1920"
+     inkscape:window-height="1016"
+     id="namedview6"
+     showgrid="false"
+     inkscape:zoom="26.75"
+     inkscape:cx="-3.4568691"
+     inkscape:cy="9.2442947"
+     inkscape:window-x="0"
+     inkscape:window-y="27"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg4"
+     inkscape:document-rotation="0" />
+  <path
+     d="m 0,8 c 0,2.761424 2.238576,5 5,5 h 6 c 2.76088,-7.71e-4 4.998601,-2.239122 4.998601,-5.0000002 C 15.998601,5.2391214 13.76088,3.0007711 11,3 H 5 C 2.238576,3 0,5.2385763 0,8 Z"
+     id="path862"
+     sodipodi:nodetypes="sscscss"
+     style="fill:#ffffff;fill-opacity:1" />
+  <path
+     d="M11 4a4 4 0 0 1 0 8H8a4.992 4.992 0 0 0 2-4 4.992 4.992 0 0 0-2-4h3zm-6 8a4 4 0 1 1 0-8 4 4 0 0 1 0 8zM0 8a5 5 0 0 0 5 5h6a5 5 0 0 0 0-10H5a5 5 0 0 0-5 5z"
+     id="path2"
+     style="fill:#cccccc;fill-opacity:1" />
+  <path
+     d="m 5,12 c -5.333331,0 -5.333331,-8 0,-8 5.333331,0 5.333331,8 0,8 z"
+     id="path2-6"
+     style="fill:#ffffff;fill-opacity:1"
+     sodipodi:nodetypes="sss"
+     inkscape:export-xdpi="384"
+     inkscape:export-ydpi="384" />
+</svg>

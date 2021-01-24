@@ -4,8 +4,19 @@ version = "0.1.0"
 authors = ["Brice DAVIER <bricedavier@gmail.com>"]
 edition = "2018"
 
+[features]
+# default = ["extra"]
+default = []
+extra = []
+
 [dependencies]
-bevy = "0.4.0"
+bevy = { version = "0.4.0", default-features = false }
 ron = "0.6.4"
 serde = "1.0"
 interpolation = "0.2.0"
+# bevy_system_diagnostics = { path = "../bevy_system_diagnostics" }
+wgpu = "0.6"
+image = "0.23.12"
+
+[patch.crates-io]
+bevy = { path = "../bevy/" } # FIXME
