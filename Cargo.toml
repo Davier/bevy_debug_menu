@@ -18,5 +18,5 @@ interpolation = "0.2.0"
 wgpu = "0.6"
 image = "0.23.12"
 
-[patch.crates-io]
-bevy = { path = "../bevy/" } # FIXME
+# [patch.crates-io]
+# bevy = { path = "../bevy/" } # FIXME
