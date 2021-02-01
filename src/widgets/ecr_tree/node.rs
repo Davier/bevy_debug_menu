@@ -39,6 +39,7 @@ pub fn dispatch_reflect(
                     type_registry_arc.clone(),
                     s.field_at_mut(i).unwrap(),
                     name,
+                    None,
                     container,
                 );
             }
@@ -52,6 +53,7 @@ pub fn dispatch_reflect(
                     type_registry_arc.clone(),
                     t.field_mut(i).unwrap(),
                     name,
+                    None,
                     container,
                 );
             }
@@ -65,6 +67,7 @@ pub fn dispatch_reflect(
                     type_registry_arc.clone(),
                     ts.field_mut(i).unwrap(),
                     name,
+                    None,
                     container,
                 );
             }
@@ -78,6 +81,7 @@ pub fn dispatch_reflect(
                     type_registry_arc.clone(),
                     l.get_mut(i).unwrap(),
                     name,
+                    None,
                     container,
                 );
             }
@@ -96,6 +100,7 @@ pub fn dispatch_reflect(
                     type_registry_arc.clone(),
                     value,
                     name,
+                    None,
                     container,
                 );
             }
@@ -108,8 +113,65 @@ pub fn dispatch_reflect(
                 type_registry_arc,
                 v,
                 "".to_string(),
+                None,
                 container,
             );
+        }
+        #[cfg(feature = "enum")]
+        bevy::reflect::ReflectMut::Enum(e) => {
+            let index = e.variant_info().index;
+            for i in 0..e.iter_variants_info().count() {
+                let variant_name = e.get_index_name(i).unwrap().to_string();
+                if i == index {
+                    let (name, value) = match e.variant_mut() {
+                        bevy::reflect::EnumVariantMut::Unit => {
+                            mutated |= super::leaf::visit_reflect_leaf(
+                                &(super::leaf::spawn_widget_unit_active as super::FnSpawnWidget),
+                                commands,
+                                state,
+                                type_registry_arc.clone(),
+                                e.as_reflect_mut(), // This will not be used
+                                variant_name,
+                                Some(i),
+                                container,
+                            );
+                            continue;
+                        }
+                        // bevy::reflect::EnumVariantMut::NewType(t) => (format!("{}({})", variant_name, t.type_name()), t),
+                        bevy::reflect::EnumVariantMut::NewType(t) => {
+                            (format!("{}(", variant_name), t)
+                        }
+                        bevy::reflect::EnumVariantMut::Tuple(t) => (
+                            format!("{}{}", variant_name, t.type_name()),
+                            t.as_reflect_mut(),
+                        ),
+                        bevy::reflect::EnumVariantMut::Struct(s) => (
+                            format!("{} {}", variant_name, s.type_name()),
+                            s.as_reflect_mut(),
+                        ),
+                    };
+                    mutated |= super::node::visit_reflect_node(
+                        commands,
+                        state,
+                        type_registry_arc.clone(),
+                        value,
+                        name, // FIXME
+                        Some(i),
+                        container,
+                    );
+                } else {
+                    super::leaf::visit_reflect_leaf(
+                        &(super::leaf::spawn_widget_wrong_variant as super::FnSpawnWidget),
+                        commands,
+                        state,
+                        type_registry_arc.clone(),
+                        e.as_reflect_mut(),
+                        variant_name,
+                        Some(i),
+                        container,
+                    );
+                }
+            }
         }
     }
     mutated
@@ -121,6 +183,7 @@ pub fn visit_reflect_node(
     type_registry_arc: TypeRegistry,
     reflect: &mut dyn Reflect,
     name: String,
+    variant_index: Option<usize>,
     container: Entity,
 ) -> bool {
     // Hook for specialized widgets
@@ -132,6 +195,7 @@ pub fn visit_reflect_node(
             type_registry_arc,
             reflect,
             name,
+            None,
             container,
         );
     }
@@ -141,6 +205,7 @@ pub fn visit_reflect_node(
     let key = super::Key::ReflectNode {
         address: reflect as *mut dyn Reflect as *mut () as usize,
         type_id: reflect.type_id(),
+        variant_index,
     };
     let entry = {
         if let Some(entry) = state.entries.get_mut(&key) {

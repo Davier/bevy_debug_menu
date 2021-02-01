@@ -7,7 +7,7 @@ use bevy::{
     ui,
 };
 
-use crate::{diagnostic, entity, resource, widgets::*};
+use crate::{diagnostic, entity, resource, scene, widgets::*};
 
 pub struct DebugMenuPlugin;
 
@@ -20,7 +20,8 @@ impl Plugin for DebugMenuPlugin {
             .add_system(handle_inputs_system.system())
             .add_system(selection_changed_event_system.system())
             .add_system(diagnostic::update_system.system())
-            .add_system(entity::update_system.system()); // after check_box::update_mutated_system
+            .add_system(entity::update_system.system()) // after check_box::update_mutated_system
+            .add_system(scene::interact_save_button.system());
         #[cfg(feature = "extra")]
         app.init_resource::<resource::TestResource>()
             .register_type::<resource::TestResource>()
@@ -50,6 +51,17 @@ enum Panel {
     Resource(Entity),
     Scene(Entity),
 }
+impl Panel {
+    fn get_entity(&self) -> Entity {
+        match self {
+            Panel::Default(e) => *e,
+            Panel::Diagnostic(e) => *e,
+            Panel::Entity(e) => *e,
+            Panel::Resource(e) => *e,
+            Panel::Scene(e) => *e,
+        }
+    }
+}
 
 #[derive(Debug)]
 pub struct Style {
@@ -59,6 +71,7 @@ pub struct Style {
     pub style_menu: radio_button::Style,
     pub style_diagnostic: diagnostic::Style,
     pub style_list: ecr_tree::Style,
+    pub style_scene: scene::Style,
     #[cfg(feature = "extra")]
     pub z_index: ui::ZIndex,
 }
@@ -148,7 +161,10 @@ impl FromResources for Style {
         let style_menu = radio_button::Style {
             style_container: ui::Style {
                 padding: Rect::all(Val::Px(2.0)),
+                flex_shrink: 0.,
                 flex_wrap: FlexWrap::Wrap,
+                #[cfg(feature = "extra")]
+                z_index: ZIndex::Some(1), // FIXME: add a container for the whole header
                 ..Default::default()
             },
             color_container: style_tree_node.color_children_container.clone(),
@@ -170,7 +186,7 @@ impl FromResources for Style {
             font: font_mono,
             color_background: color_background.clone(),
             color_box: style_tree_node.color_button.clone(),
-            style_box:  ui::Style {
+            style_box: ui::Style {
                 flex_shrink: 0.,
                 align_items: AlignItems::Center,
                 margin: Rect {
@@ -203,6 +219,12 @@ impl FromResources for Style {
             },
         };
 
+        let style_scene = scene::Style {
+            font: font.clone(),
+            font_size: 18.0,
+            color_background: color_background.clone(),
+        };
+
         Style {
             color_background,
             font,
@@ -211,9 +233,10 @@ impl FromResources for Style {
             // style_entity_list,
             style_diagnostic,
             style_list,
+            style_scene,
             // In front of default layers
             #[cfg(feature = "extra")]
-            z_index: ZIndex::Some(1),
+            z_index: ZIndex::Some(10),
         }
     }
 }
@@ -221,21 +244,18 @@ impl FromResources for Style {
 fn spawn_system(commands: &mut Commands, style: Res<Style>) {
     trace!("inserting main panel");
     let mut ui_style_root = ui::Style {
-        // Allow to grow height infinitely to scroll
-        size: Size::new(Val::Percent(40.0), Val::Undefined),
-        // Always fit to screen
-        min_size: Size::new(Val::Percent(40.0), Val::Percent(100.0)),
+        // Define absolute position and size for the main container
+        position_type: PositionType::Absolute,
+        size: Size {
+            width: Val::Percent(40.),
+            height: Val::Percent(100.),
+        },
         // Flow from top to bottom
         flex_direction: FlexDirection::ColumnReverse,
         // Align at the top of the screen
         align_self: AlignSelf::FlexEnd,
         // Content is at the top
         justify_content: JustifyContent::FlexStart,
-        position: Rect {
-            left: Val::Percent(0.0),
-            top: Val::Px(0.0),
-            ..Default::default()
-        },
         ..Default::default()
     };
     set_zindex(&mut ui_style_root, &style);
@@ -344,45 +364,55 @@ fn spawn_system(commands: &mut Commands, style: Res<Style>) {
 fn update_system(
     time: Res<Time>,
     windows: Res<Windows>,
-    mut query: Query<(&mut DebugMenu, &Node, &mut ui::Style), With<DebugIgnore>>,
+    mut query_debug_menu: Query<(Entity, &mut DebugMenu), With<DebugIgnore>>,
+    mut query_style: Query<(&mut ui::Style, &Node), With<DebugIgnore>>,
 ) {
-    if let Some((mut debug_menu, node, mut style)) = query.iter_mut().next() {
-        let window_height = windows.get_primary().unwrap().height();
-        let panel_height = node.size.y;
-
-        // Vertical scrolling
-        debug_menu.scrolling_position = clamp(
-            debug_menu.scrolling_position,
-            window_height - panel_height,
-            0.0,
-        );
-        let new_position_top = Val::Px(debug_menu.scrolling_position);
-        if new_position_top != style.position.top {
-            style.position.top = new_position_top;
-        }
+    if let Some((entity, mut debug_menu)) = query_debug_menu.iter_mut().next() {
         // Horizontal transition
-        if debug_menu.show_progress >= 0.0 {
-            let transition_time = 0.2;
-            debug_menu.show_progress -= time.delta_seconds() / transition_time;
-            let panel_width = match style.size.width {
-                Val::Percent(x) => x,
-                _ => todo!(),
-            };
-            let (origin, target) = if debug_menu.show {
-                (-panel_width, 0.0)
-            } else {
-                (0.0, -panel_width)
-            };
-            use interpolation::*;
-            let new_position_left = Val::Percent(
-                origin + (1.0 - debug_menu.show_progress).quadratic_in_out() * (target - origin),
-            );
-            if new_position_left != style.position.left {
-                style.position.left = new_position_left;
+        if let Ok((mut debug_menu_style, _)) = query_style.get_mut(entity) {
+            if debug_menu.show_progress >= 0.0 {
+                let transition_time = 0.2;
+                debug_menu.show_progress -= time.delta_seconds() / transition_time;
+                let panel_width = match debug_menu_style.size.width {
+                    Val::Percent(x) => x,
+                    _ => todo!(),
+                };
+                let (origin, target) = if debug_menu.show {
+                    (-panel_width, 0.0)
+                } else {
+                    (0.0, -panel_width)
+                };
+                use interpolation::*;
+                let new_position_left = Val::Percent(
+                    origin
+                        + (1.0 - debug_menu.show_progress).quadratic_in_out() * (target - origin),
+                );
+                if new_position_left != debug_menu_style.position.left {
+                    debug_menu_style.position.left = new_position_left;
+                }
             }
         }
-    } else {
-        warn!("Debug Menu was despawned");
+
+        if let Ok((mut panel_style, panel_node)) =
+            query_style.get_mut(debug_menu.selected_panel.get_entity())
+        {
+            let window_height = windows.get_primary().unwrap().height();
+            let header_height = window_height * 0.15;
+            let panel_height = panel_node.size.y;
+            let max_scroll = window_height - panel_height - header_height; // FIXME: use bottom pos of panel - botton pos of window
+
+            // Vertical scrolling
+            if debug_menu.scrolling_position < max_scroll {
+                debug_menu.scrolling_position = max_scroll;
+            }
+            if debug_menu.scrolling_position > 0. {
+                debug_menu.scrolling_position = 0.;
+            }
+            let new_position_top = Val::Px(debug_menu.scrolling_position);
+            if new_position_top != panel_style.position.top {
+                panel_style.position.top = new_position_top;
+            }
+        }
     }
 }
 
@@ -412,13 +442,7 @@ fn selection_changed_event_system(
     if let Some((debug_menu_entity, mut debug_menu)) = query.iter_mut().next() {
         for event in radio_button_events.iter() {
             if event.widget == debug_menu.menu_container {
-                let previous_panel = match debug_menu.selected_panel {
-                    Panel::Diagnostic(e) => e,
-                    Panel::Entity(e) => e,
-                    Panel::Resource(e) => e,
-                    Panel::Scene(e) => e,
-                    Panel::Default(e) => e,
-                };
+                let previous_panel = debug_menu.selected_panel.get_entity();
                 commands.despawn_recursive(previous_panel);
                 commands.set_current_entity(debug_menu_entity);
                 match event.new_selection {
@@ -427,8 +451,8 @@ fn selection_changed_event_system(
                         commands.with_children(|parent| {
                             parent.spawn(NodeBundle::default());
                             default_panel = parent.current_entity();
-                            debug_menu.selected_panel = Panel::Default(default_panel.unwrap());
                         });
+                        debug_menu.selected_panel = Panel::Default(default_panel.unwrap());
                     }
                     Some(0) => {
                         let diagnostic_list_container =
@@ -444,28 +468,13 @@ fn selection_changed_event_system(
                         debug_menu.selected_panel = Panel::Resource(resource_list_container);
                     }
                     Some(3) => {
-                        let mut default_panel = None;
-                        commands.with_children(|parent| {
-                            parent.spawn(NodeBundle::default());
-                            default_panel = parent.current_entity();
-                        });
-                        debug_menu.selected_panel = Panel::Scene(default_panel.unwrap());
+                        let scene_container = scene::spawn(commands, &style.style_scene);
+                        debug_menu.selected_panel = Panel::Scene(scene_container);
                     }
                     _ => unreachable!(),
                 }
             }
         }
-    }
-}
-
-// Does not panic when min > max unlike bevy::math::clamp
-fn clamp<T: PartialOrd>(input: T, min: T, max: T) -> T {
-    if input < min {
-        min
-    } else if input > max {
-        max
-    } else {
-        input
     }
 }
 
@@ -585,5 +594,5 @@ fn load_texture(bytes: &[u8]) -> Texture {
 }
 
 pub fn setup_ui_camera(commands: &mut Commands) {
-    commands.spawn(CameraUiBundle::default());
+    commands.spawn(UiCameraBundle::default());
 }

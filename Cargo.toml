@@ -3,19 +3,24 @@ name = "bevy_debug_menu"
 version = "0.1.0"
 authors = ["Brice DAVIER <bricedavier@gmail.com>"]
 edition = "2018"
+description = "A debug memu for bevy apps that can explore and edit entities and resources live"
+repository = "https://github.com/Davier/bevy_debug_menu"
+license = "MIT"
+keywords = ["gamedev", "bevy"]
+readme = "README.md"
+exclude = ["assets/**/*"]
 
 [features]
-# default = ["extra"]
 default = []
-extra = []
+extra = ["enum"]
+enum = []
 
 [dependencies]
-bevy = { version = "0.4.0", default-features = false }
+bevy = { version = "0.4.0", default-features = false, features = ["render"]}
 ron = "0.6.4"
 serde = "1.0"
 interpolation = "0.2.0"
-# bevy_system_diagnostics = { path = "../bevy_system_diagnostics" }
 image = "0.23.12"
 
-# [patch.crates-io]
-# bevy = { path = "../bevy/" }
+[patch.crates-io]
+bevy = { git = "https://github.com/bevyengine/bevy", rev = "e6e23fdfa97b0ebfad3495407d9dff27d75ab843" }

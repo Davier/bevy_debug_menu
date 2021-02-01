@@ -1,4 +1,3 @@
-use std::any::TypeId;
 use std::ops::Deref;
 
 #[cfg(feature = "extra")]
@@ -13,6 +12,8 @@ use bevy::{
     reflect::TypeRegistry,
     text::Text,
 };
+#[cfg(feature = "extra")]
+use std::any::TypeId;
 
 pub fn update_system(world: &mut World, resources: &mut Resources) {
     let mut commands = Commands::default();

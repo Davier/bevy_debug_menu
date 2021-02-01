@@ -29,10 +29,14 @@ pub enum Key {
     ReflectNode {
         address: usize,
         type_id: TypeId,
+        // Used to differenciate enum variants
+        variant_index: Option<usize>,
     },
     ReflectLeaf {
         address: usize,
         type_id: TypeId,
+        // Used to differenciate enum variants
+        variant_index: Option<usize>,
     },
 }
 

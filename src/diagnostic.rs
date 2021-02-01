@@ -32,6 +32,17 @@ pub fn spawn(commands: &mut Commands, style: &Style) -> Entity {
             .spawn(NodeBundle {
                 style: ui::Style {
                     flex_direction: FlexDirection::ColumnReverse,
+                    position: Rect {
+                        left: Val::Undefined,
+                        top: Val::Px(0.0), // We use this for vertical scrolling
+                        bottom: Val::Undefined,
+                        right: Val::Undefined,
+                    },
+                    size: Size {
+                        width: Val::Percent(100.),
+                        height: Val::Undefined, // Height will grow as needed
+                    },
+                    flex_shrink: 0.,
                     padding: Rect {
                         left: Val::Px(4.0),
                         right: Val::Px(4.0),
@@ -80,16 +91,20 @@ pub fn update_system(
                             parent
                                 .spawn(TextBundle {
                                     text: Text::with_section(
-                                        format!("{}:", &diagnostic.name[diagnostic.name.len().saturating_sub(40)..]),
+                                        format!(
+                                            "{}:",
+                                            &diagnostic.name
+                                                [diagnostic.name.len().saturating_sub(40)..]
+                                        ),
                                         TextStyle {
                                             font: widget.style.font.clone(),
                                             font_size: widget.style.font_size,
                                             color: Color::WHITE,
-                                        }, 
+                                        },
                                         TextAlignment {
                                             vertical: VerticalAlign::Center,
                                             horizontal: HorizontalAlign::Left,
-                                        }
+                                        },
                                     ),
                                     style: ui::Style {
                                         align_self: AlignSelf::FlexStart,
@@ -116,7 +131,7 @@ pub fn update_system(
                                         TextAlignment {
                                             vertical: VerticalAlign::Center,
                                             horizontal: HorizontalAlign::Right,
-                                        }
+                                        },
                                     ),
                                     style: ui::Style {
                                         align_self: AlignSelf::FlexEnd,

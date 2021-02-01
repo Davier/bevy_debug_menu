@@ -25,6 +25,17 @@ pub fn spawn(commands: &mut Commands, style: &ecr_tree::Style) -> Entity {
             .spawn(NodeBundle {
                 style: ui::Style {
                     flex_direction: FlexDirection::ColumnReverse,
+                    position: Rect {
+                        left: Val::Undefined,
+                        top: Val::Px(0.0), // We use this for vertical scrolling
+                        bottom: Val::Undefined,
+                        right: Val::Undefined,
+                    },
+                    size: Size {
+                        width: Val::Percent(100.),
+                        height: Val::Undefined, // Height will grow as needed
+                    },
+                    flex_shrink: 0.,
                     padding: Rect {
                         left: Val::Px(4.0),
                         right: Val::Px(4.0),

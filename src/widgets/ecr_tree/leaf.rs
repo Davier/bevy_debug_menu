@@ -17,6 +17,7 @@ use self::input_box::BuildInputBox;
 
 use super::*;
 
+#[allow(clippy::clippy::too_many_arguments)]
 pub fn visit_reflect_leaf(
     spawner: &FnSpawnWidget,
     commands: &mut Commands,
@@ -24,12 +25,14 @@ pub fn visit_reflect_leaf(
     _type_registry_arc: TypeRegistry,
     reflect: &mut dyn Reflect,
     name: String,
+    variant_index: Option<usize>,
     container: Entity,
 ) -> bool {
     // Insert
     let key = Key::ReflectLeaf {
         address: reflect as *mut dyn Reflect as *mut () as usize,
         type_id: reflect.type_id(),
+        variant_index,
     };
     let entry = {
         if let Some(entry) = state.entries.get_mut(&key) {
@@ -106,6 +109,178 @@ pub fn spawn_widget_default(
         },
     );
     inputbox.widget
+}
+
+pub fn spawn_widget_unit(
+    _key: super::Key,
+    commands: &mut Commands,
+    state: &mut super::State,
+    _type_registry_arc: TypeRegistry,
+    _reflect: &mut dyn Reflect,
+    name: String,
+    container: Entity,
+) -> Entity {
+    commands.set_current_entity(container);
+    let tree_node = commands.spawn_tree_node(
+        state.style.style_node.clone(),
+        Some(|parent: &mut ChildBuilder| {
+            parent.with(DebugIgnore);
+        }),
+    );
+    // Override button behaviour, we only use the same style
+    commands.remove_one::<tree_node::Button>(tree_node.button);
+
+    commands.set_current_entity(tree_node.button);
+    commands.with_children(|parent| {
+        parent
+            .spawn(TextBundle {
+                style: ui::Style {
+                    align_self: AlignSelf::Center,
+                    size: Size {
+                        width: Val::Undefined,
+                        height: Val::Px(20.),
+                    },
+                    flex_shrink: 1.,
+                    flex_grow: 1.,
+                    margin: Rect {
+                        left: Val::Px(26.0),
+                        right: Val::Px(5.0),
+                        top: Val::Px(5.0),
+                        bottom: Val::Px(5.0),
+                    },
+                    ..Default::default()
+                },
+                text: Text::with_section(
+                    format!("{}()", name),
+                    TextStyle {
+                        font: state.style.font.clone(),
+                        font_size: 20.0,
+                        color: state.style.color_node_text,
+                    },
+                    Default::default(),
+                ),
+                ..Default::default()
+            })
+            .with(DebugIgnore)
+            .current_entity();
+    });
+    tree_node.widget
+}
+
+pub fn spawn_widget_unit_active(
+    _key: super::Key,
+    commands: &mut Commands,
+    state: &mut super::State,
+    _type_registry_arc: TypeRegistry,
+    _reflect: &mut dyn Reflect,
+    name: String,
+    container: Entity,
+) -> Entity {
+    commands.set_current_entity(container);
+    let mut style = state.style.style_node.clone();
+    if let Some(color_button_hovered) = style.color_button_hovered.as_ref() {
+        style.color_button = color_button_hovered.clone();
+    }
+    let tree_node = commands.spawn_tree_node(
+        style,
+        Some(|parent: &mut ChildBuilder| {
+            parent.with(DebugIgnore);
+        }),
+    );
+    // Override button behaviour, we only use the same style
+    commands.remove_one::<tree_node::Button>(tree_node.button);
+
+    commands.set_current_entity(tree_node.button);
+    commands.with_children(|parent| {
+        parent
+            .spawn(TextBundle {
+                style: ui::Style {
+                    align_self: AlignSelf::Center,
+                    size: Size {
+                        width: Val::Undefined,
+                        height: Val::Px(20.),
+                    },
+                    flex_shrink: 1.,
+                    flex_grow: 1.,
+                    margin: Rect {
+                        left: Val::Px(26.0),
+                        right: Val::Px(5.0),
+                        top: Val::Px(5.0),
+                        bottom: Val::Px(5.0),
+                    },
+                    ..Default::default()
+                },
+                text: Text::with_section(
+                    name.to_string(),
+                    TextStyle {
+                        font: state.style.font.clone(),
+                        font_size: 20.0,
+                        color: state.style.color_node_text,
+                    },
+                    Default::default(),
+                ),
+                ..Default::default()
+            })
+            .with(DebugIgnore)
+            .current_entity();
+    });
+    tree_node.widget
+}
+
+pub fn spawn_widget_wrong_variant(
+    _key: super::Key, // FIXME: How to handle the keys in enums?
+    commands: &mut Commands,
+    state: &mut super::State,
+    _type_registry_arc: TypeRegistry,
+    _reflect: &mut dyn Reflect,
+    name: String,
+    container: Entity,
+) -> Entity {
+    commands.set_current_entity(container);
+    let tree_node = commands.spawn_tree_node(
+        state.style.style_node.clone(),
+        Some(|parent: &mut ChildBuilder| {
+            parent.with(DebugIgnore);
+        }),
+    );
+    // Override button behaviour, we only use the same style
+    commands.remove_one::<tree_node::Button>(tree_node.button);
+
+    commands.set_current_entity(tree_node.button);
+    commands.with_children(|parent| {
+        parent
+            .spawn(TextBundle {
+                style: ui::Style {
+                    align_self: AlignSelf::Center,
+                    size: Size {
+                        width: Val::Undefined,
+                        height: Val::Px(20.),
+                    },
+                    flex_shrink: 1.,
+                    flex_grow: 1.,
+                    margin: Rect {
+                        left: Val::Px(26.0),
+                        right: Val::Px(5.0),
+                        top: Val::Px(5.0),
+                        bottom: Val::Px(5.0),
+                    },
+                    ..Default::default()
+                },
+                text: Text::with_section(
+                    name,
+                    TextStyle {
+                        font: state.style.font.clone(),
+                        font_size: 20.0,
+                        color: state.style.color_node_text,
+                    },
+                    Default::default(),
+                ),
+                ..Default::default()
+            })
+            .with(DebugIgnore)
+            .current_entity();
+    });
+    tree_node.widget
 }
 
 pub fn spawn_widget_bool(
@@ -333,7 +508,7 @@ fn wrap_serialized_value(mut serialized_text: String, edited_text: &str) -> Stri
 
 fn extract_serialized_value(serialized_text: &str) -> &str {
     let value = "\"value\":";
-    let start_index = serialized_text.find(value).unwrap() + value.len();
+    let start_index = serialized_text.find(value).unwrap() + value.len(); // FIXME: panics
     let end_index = serialized_text.len() - 1;
     &serialized_text[start_index..end_index]
 }
